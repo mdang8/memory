@@ -1,8 +1,12 @@
 <h1>Memory Game</h1>
 
+<div class="row">
+  <div class="col">
+    <p><input type="text" id="game-input"></p>
+    <p><button id="game-button">Game Button</button></p>
+    <p id="game-output"></p>
+  </div>
+</div>
 <div id="game">
   Loading...
 </div>
-
-
-

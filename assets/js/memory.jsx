@@ -2,14 +2,14 @@ import React from 'react';
 import ReactDOM from 'react-dom';
 import { Button } from 'reactstrap';
 
-export default function run_memory(root) {
-  ReactDOM.render(<Memory />, root);
+export default function run_memory(root, channel) {
+  ReactDOM.render(<Memory channel={channel} />, root);
 }
 
 class Memory extends React.Component {
   constructor(props) {
     super(props);
-
+    this.channel = props.channel;
     this.state = {
       letters: initLetters(),  // initialized array of letters with properties
       currentMatchCharacter: '',  // current letter being searched for
@@ -18,6 +18,32 @@ class Memory extends React.Component {
       numberFound: 0,  // number of matches found
       numberClicks: 0,  // number of attempted guesses
     };
+
+    this.channel.join()
+        .receive('ok', res => {
+          console.log(res);
+          this.gotView.bind(this);
+
+          $('#game-button').click(() => {
+            this.channel.push('clicked', { x: 'click' }).receive('clicked', msg => {
+              console.log(msg.text);
+            });
+          });
+        })
+        .receive('error', res => {
+          console.log('Unable to join.', res);
+        });
+  }
+
+  gotView(view) {
+    console.log('New view', view);
+    this.setState(view.game);
+  }
+
+  // sends the guess to be evaluated
+  sendGuess(guessKey) {
+    this.channel.push('guess', { key: guessKey, })
+        .receive('ok', this.gotView.bind(this));
   }
 
   checkMatched(guessKey) {

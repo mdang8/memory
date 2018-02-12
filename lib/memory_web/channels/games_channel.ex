@@ -10,7 +10,8 @@ defmodule MemoryWeb.GamesChannel do
       |> assign(:game, game)
       |> assign(:name, name)
 
-      {:ok, %{ "join" => name, "game" => Game.client_view(game) }, socket}
+      {:ok, %{ "join" => name, "game" => Game.client_view(game), "letters" => game.letters },
+        socket}
     else
       {:error, %{reason: "unauthorized"}}
     end
@@ -29,9 +30,25 @@ defmodule MemoryWeb.GamesChannel do
     {:noreply, socket}
   end
 
+  def handle_in("guess", payload, socket) do
+    guess_key = payload.key
+
+  end
+
   def handle_in("clicked", payload, socket) do
     res = %{ "text" => "button clicked" }
     {:reply, {:clicked, res}, socket}
+  end
+
+  def handle_in("init", payload, socket) do
+    res = %{ "letters" => Game.init_letters() }
+    {:reply, {:init, res}, socket}
+  end
+
+  def handle_in("reset", payload, socket) do
+    game = Game.new()
+    res = %{ "game" => Game.client_view(game) }
+    {:reply, {:reset, res }, socket}
   end
 
   # Add authorization logic here as required.

@@ -1,8 +1,11 @@
+<!-- Attribution to lecture notes code -->
+
 <h1>Memory Game</h1>
-
-<div id="game">
-  Loading...
+<div id="join" class="row">
+  <div class="col">
+    <h3>Join a Game</h3>
+    <p><input type="text" id="game-input"></p>
+    <p><button id="game-button">JOIN</button></p>
+    <p id="game-output"></p>
+  </div>
 </div>
-
-
-

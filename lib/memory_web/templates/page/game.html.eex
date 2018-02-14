@@ -1,0 +1,12 @@
+<!-- Attribution to Prof. Tuck's Hangman code -->
+<div class="row">
+  <div class="col">
+    <h1>Memory Game: <%= @game %></h1>
+    <script>
+      window.gameName = "<%= @game %>";
+    </script>
+    <div id="game">
+      <p>React app not loaded...</p>
+    </div>
+  </div>
+</div>

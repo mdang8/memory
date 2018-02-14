@@ -1,12 +1,11 @@
-<h1>Memory Game</h1>
+<!-- Attribution to lecture notes code -->
 
-<div class="row">
+<h1>Memory Game</h1>
+<div id="join" class="row">
   <div class="col">
+    <h3>Join a Game</h3>
     <p><input type="text" id="game-input"></p>
-    <p><button id="game-button">Game Button</button></p>
+    <p><button id="game-button">JOIN</button></p>
     <p id="game-output"></p>
   </div>
-</div>
-<div id="game">
-  Loading...
 </div>

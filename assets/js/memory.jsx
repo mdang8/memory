@@ -11,12 +11,13 @@ class Memory extends React.Component {
     super(props);
     this.channel = props.channel;
     this.state = {
-      letters: [],
+      keys: [],
+      foundKeys: [],
+      remainingKeys: [],
+      displayLetters: {},
       currentMatchCharacter: '',
       currentMatchKey: '',
-      allowClicks: true,
-      numberFound: 0,
-      numberClicks: 0,
+      allowClicks: true
     };
 
     this.channel.join()
@@ -27,128 +28,35 @@ class Memory extends React.Component {
   }
 
   gotView(view) {
-    console.log('New view', view);
-    this.setState(view.game);
+    if (!view.game.allowClicks) {
+      this.setState(view.game);
+
+      setTimeout(() => {
+        this.channel.push('clear', {})
+            .receive('ok', this.gotView.bind(this));
+      }, 1000);
+    } else {
+      this.setState(view.game);
+    }
   }
 
   // sends the guess to be evaluated
   sendGuess(guessKey) {
-    this.channel.push('guess', { key: guessKey, })
+    this.channel.push('guess', { key: guessKey })
         .receive('ok', this.gotView.bind(this));
   }
 
-  checkMatched(guessKey) {
-    return this.state.letters[guessKey].matched;
-  }
-
-  findLetter(key) {
-    let matchLetter = {};
-    this.state.letters.forEach((x) => {
-      if (x.key === key) {
-        matchLetter = x;
-      }
-    });
-
-    return(matchLetter);
-  }
-
-  guess(guessKey) {
-    // exits function if clicks are currently not allowed
-    if (!this.state.allowClicks) {
-      return;
-    }
-
-    let matchLetter = this.findLetter(guessKey);
-
-    let guessCharacter = matchLetter.character;
-    let letters = this.state.letters;
-
-    if (this.checkMatched(guessKey)) {
-      console.log("Check matched");
-      // resets current letter being matched
-      this.setState({
-        letters,
-        currentMatchCharacter: '',
-        currentMatchKey: '',
-      });
-      return;
-    }
-
-    if (this.state.currentMatchCharacter === '' && this.state.currentMatchKey === '') {
-      matchLetter.currentlyMatching = true;
-
-      this.setState({
-        letters,
-        currentMatchCharacter: guessCharacter,
-        currentMatchKey: guessKey,
-        numberClicks: ++this.state.numberClicks,
-      });
-
-      return;
-    } else {
-      // checks if the letter is currently being matched (found letter pair)
-      if (guessCharacter === this.state.currentMatchCharacter && guessKey !== this.state.currentMatchKey) {
-        // sets the found letters as "matched"
-        letters.forEach((letter) => {
-          if (letter.character === guessCharacter) {
-            letter.matched = true;
-          }
-        });
-
-        // resets state with incremented number of matches found
-        this.setState({
-          letters,
-          currentMatchCharacter: '',
-          currentMatchKey: '',
-          allowClicks: true,
-          numberFound: ++this.state.numberFound,
-          numberClicks: ++this.state.numberClicks,
-        });
-
-      } else {
-        matchLetter.currentlyMatching = true;
-        // resets state with clicks not allowed
-        this.setState({
-          letters,
-          allowClicks: false,
-          numberClicks: ++this.state.numberClicks,
-        });
-
-        // sets a one second delay after choosing an incorrect pair
-        setTimeout(() => {
-          // resets the currently matching status
-          letters.forEach((letter) => {
-            letter.currentlyMatching = false;
-          });
-
-          // resets state with clicks allowed
-          this.setState({
-            letters,
-            currentMatchCharacter: '',
-            currentMatchKey: '',
-            allowClicks: true,
-          });
-        }, 1000);
-      }
-    }
-
-    // displays winner message and resets game
-    if (this.state.numberFound === 8) {
-      alert('You are a winner!');
-      this.resetGame();
-    }
-  }
-
-  // resets the game by reinitialzing the letters and setting the other state properties to their default values
+  // resets the game by reinitialzing the letters and setting the other state properties to their
+  // default values
   resetGame() {
     this.channel.push('reset', {})
         .receive('reset', this.gotView.bind(this));
   }
 
   render() {
-    let tileList = _.map(this.state.letters, (letter, i) => {
-      let id = this.state.letters[i].key;
-      return <Tile letter={letter} guess={this.guess.bind(this)} key={id} id={id} />;
+    let tileList = _.map(this.state.keys, (key) => {
+      return <Tile id={key} state={this.state}
+                   guess={this.sendGuess.bind(this)} key={key} />;
     });
 
     // renders the tiles from the list
@@ -221,19 +129,22 @@ class Memory extends React.Component {
 
 function Tile(params) {
   function tileClick() {
-    params.guess(params.id);
+    if (params.state.allowClicks && params.id !== params.state.currentMatchKey) {
+      params.guess(params.id);
+    }
   }
 
-  let letter = params.letter;
+  let character = params.id in params.state.displayLetters ?
+      params.state.displayLetters[params.id] : '';
 
   // determines display of the tile
-  if (letter.matched) {
+  if (params.state.foundKeys.includes(params.id)) {
     return (
-      <div className="tile matched" onClick={tileClick}><h2>{params.letter.character}</h2></div>
+      <div className="tile matched" onClick={tileClick}><h2>{character}</h2></div>
     );
-  } else if (letter.currentlyMatching) {
+  } else if (params.id in params.state.displayLetters) {
     return (
-      <div className="tile matching" onClick={tileClick}><h2>{params.letter.character}</h2></div>
+      <div className="tile matching" onClick={tileClick}><h2>{character}</h2></div>
     );
   } else {
     return (

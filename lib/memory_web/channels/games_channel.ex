@@ -3,9 +3,10 @@ defmodule MemoryWeb.GamesChannel do
 
   alias Memory.Game
 
+  # Attribution to Prof. Tuck's Hangman code
   def join("games:" <> name, payload, socket) do
     if authorized?(payload) do
-      game = Game.new()
+      game = Memory.GameBackup.load(name) || Game.new()
       socket = socket
       |> assign(:game, game)
       |> assign(:name, name)
@@ -30,25 +31,31 @@ defmodule MemoryWeb.GamesChannel do
     {:noreply, socket}
   end
 
-  def handle_in("guess", payload, socket) do
-    guess_key = payload.key
+  def handle_in("guess", %{ "key" => k }, socket) do
+    game = Game.guess(socket.assigns[:game], k)
+    Memory.GameBackup.save(socket.assigns[:name], game)
+    socket = assign(socket, :game, game)
+    res = %{ "game" => Game.client_view(game) }
 
+    {:reply, {:ok, res}, socket}
   end
 
-  def handle_in("clicked", payload, socket) do
-    res = %{ "text" => "button clicked" }
-    {:reply, {:clicked, res}, socket}
-  end
+  def handle_in("clear", payload, socket) do
+    game = Game.clear(socket.assigns[:game])
+    Memory.GameBackup.save(socket.assigns[:name], game)
+    socket = assign(socket, :game, game)
+    res = %{ "game" => Game.client_view(game) }
 
-  def handle_in("init", payload, socket) do
-    res = %{ "letters" => Game.init_letters() }
-    {:reply, {:init, res}, socket}
+    {:reply, {:ok, res}, socket}
   end
 
   def handle_in("reset", payload, socket) do
     game = Game.new()
+    Memory.GameBackup.save(socket.assigns[:name], game)
+    socket = assign(socket, :game, game)
     res = %{ "game" => Game.client_view(game) }
-    {:reply, {:reset, res }, socket}
+
+    {:reply, {:reset, res}, socket}
   end
 
   # Add authorization logic here as required.

@@ -23,11 +23,20 @@ import socket from './socket'
 import run_memory from './memory';
 
 function init() {
-  let root = document.getElementById('game');
+  let indexRoot = document.getElementById('join');
+  let gameRoot = document.getElementById('game');
 
-  if (root) {
+  if (indexRoot) {
+    // gets a game name and redirects to it
+    $('#game-button').click(() => {
+      let gameName = $('#game-input').val();
+      window.location.href = '/game/' + gameName;
+    });
+  }
+
+  if (gameRoot) {
     let channel = socket.channel('games:' + window.gameName, {});
-    run_memory(root, channel);
+    run_memory(gameRoot, channel);
   }
 }
 
